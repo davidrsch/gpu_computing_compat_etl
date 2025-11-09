@@ -504,7 +504,7 @@ normalize_and_export <- function(raw_list, out_dir = 'data/processed') {
           version = version,
           version_key = version_key,
           source_url = rt_raw$source_url[i],
-          fetched_at = rt_raw$sha256[i],
+          fetched_at = if ("fetched_at" %in% names(rt_raw)) rt_raw$fetched_at[i] else Sys.time(),
           sha256 = rt_raw$sha256[i]
         )
       )
