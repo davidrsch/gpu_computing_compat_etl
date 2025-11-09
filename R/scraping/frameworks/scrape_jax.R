@@ -107,12 +107,7 @@ scrape_jax <- function() {
     for (x in cu) {
       v <- trimws(gsub('(?i)cuda', '', x, perl = TRUE))
       pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
-      fwv_num <- NA_character_
-      if (length(fwv) > 0) {
-        m <- regexec('([0-9]+(\\.[0-9]+)+)', fwv[1])
-        mm <- regmatches(fwv[1], m)[[1]]
-        if (length(mm) >= 2) fwv_num <- mm[2]
-      }
+      fwv_num <- extract_version_number(fwv)
       if (nchar(v) > 0) {
         if (length(pyv_clean) > 0) {
           for (pv in pyv_clean) jax_rt_versions_list[[length(jax_rt_versions_list) + 1]] <- tibble(framework='jax',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256)
@@ -124,12 +119,7 @@ scrape_jax <- function() {
     for (x in ro) {
       v <- trimws(gsub('(?i)rocm', '', x, perl = TRUE))
       pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
-      fwv_num <- NA_character_
-      if (length(fwv) > 0) {
-        m <- regexec('([0-9]+(\\.[0-9]+)+)', fwv[1])
-        mm <- regmatches(fwv[1], m)[[1]]
-        if (length(mm) >= 2) fwv_num <- mm[2]
-      }
+      fwv_num <- extract_version_number(fwv)
       if (nchar(v) > 0) {
         if (length(pyv_clean) > 0) {
           for (pv in pyv_clean) jax_rt_versions_list[[length(jax_rt_versions_list) + 1]] <- tibble(framework='jax',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256)
