@@ -76,7 +76,7 @@ scrape_nvidia <- function() {
 
   extract_models <- \(txt) {
     patterns <- c(
-      "GeForce RTX [2345][0-9]{2,3}(?: (?:Ti|SUPER))?(?: [A-Za-z]+)?",
+      "GeForce RTX [2-9][0-9]{2,3}(?: (?:Ti|SUPER))?(?: [A-Za-z]+)?",
       "GeForce GTX [0-9]{3,4}(?:M| Ti| SUPER)?",
       "\\bGTX [0-9]{3,4}(?:M| Ti| SUPER)?\\b",
       "GeForce [0-9]{3,4}M",
