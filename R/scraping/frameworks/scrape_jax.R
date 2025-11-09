@@ -67,7 +67,19 @@ scrape_jax <- function() {
     runtimes = collapse_uniq(jax_runtime_tokens)
   )
   
-  jax_rt_versions <- if (length(jax_rt_versions_list) > 0) bind_rows(jax_rt_versions_list) else tibble()
+  jax_rt_versions <- if (length(jax_rt_versions_list) > 0) {
+    bind_rows(jax_rt_versions_list)
+  } else {
+    tibble(
+      framework = character(),
+      framework_version = character(),
+      runtime_name = character(),
+      runtime_version = character(),
+      python_version = character(),
+      source_url = character(),
+      sha256 = character()
+    )
+  }
 
   framework_matrix_raw <- jax_rt_versions |> distinct(framework, runtime_name, runtime_version, python_version, framework_version, .keep_all = TRUE)
 
