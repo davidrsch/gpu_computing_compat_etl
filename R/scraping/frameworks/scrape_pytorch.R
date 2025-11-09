@@ -170,16 +170,16 @@ scrape_pytorch <- function() {
   framework_matrix_raw <- pt_rt_versions |> distinct(framework, runtime_name, runtime_version, python_version, framework_version, .keep_all = TRUE)
 
   language_raw <- tibble()
-  add_lang_rows <- function(tokens, src, sh) {
-    if (length(tokens) == 0) return()
+  add_lang_rows <- function(language_raw, tokens, src, sh) {
+    if (length(tokens) == 0) return(language_raw)
     for (tk in unique(tokens)) {
-      language_raw <<- bind_rows(language_raw, tibble(language = tolower(trimws(tk)), source_url = src, sha256 = sh))
+      language_raw <- bind_rows(language_raw, tibble(language = tolower(trimws(tk)), source_url = src, sha256 = sh))
     }
+    language_raw
   }
-  add_lang_rows(pt_lang_versioned, pt_src, pt_sha)
+  language_raw <- add_lang_rows(language_raw, pt_lang_versioned, pt_src, pt_sha)
   if (nrow(language_raw) == 0) {
     language_raw <- tibble(language = 'python: python 3.8+', source_url = framework_raw$source_url[1], sha256 = framework_raw$sha256[1])
-  }
 
   list(
     framework_raw = framework_raw,
