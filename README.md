@@ -4,8 +4,32 @@ This project scrapes vendor and framework pages (NVIDIA, AMD, PyTorch, TensorFlo
 
 ## Running the pipeline
 
-- Orchestrated by `scripts/run_scrapers_and_export.R`
   - Strict checks may require both vendors and framework evidence; relax with `--relaxed-checks` when needed.
+
+# gpu_computing_compat_etl
+
+## Weekly scheduled run (CI)
+
+This repository contains a GitHub Actions workflow that runs the ETL once a week to keep processed CSV/SQLite outputs fresh.
+
+- File: `.github/workflows/weekly_gpu_compat_pipeline.yml`
+- Schedule: Every Monday at 03:00 UTC
+- Outputs: Artifacts in the workflow run (`gpu-compat-data`) containing all CSVs and `gpu_compat.sqlite`
+
+To trigger manually, use the "Run workflow" button under the Actions tab (workflow_dispatch).
+
+If you prefer to commit the refreshed `data/processed` files back to the repo, enable the optional commit step in the workflow and provide a token with write permissions.
+
+## Run locally
+
+Restore the R environment and run the pipeline. You can use relaxed checks to avoid overly strict gating during development.
+
+```
+Rscript -e "if(!requireNamespace('renv', quietly=TRUE)) install.packages('renv'); renv::restore()"
+Rscript scripts/run_scrapers_and_export.R --relaxed-checks
+```
+
+Outputs will be written to `data/processed/` and a SQLite database at `data/processed/gpu_compat.sqlite`.
 
 ## Cleaning
 
