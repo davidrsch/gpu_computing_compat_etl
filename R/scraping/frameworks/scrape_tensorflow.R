@@ -33,6 +33,7 @@ scrape_tensorflow <- function() {
   tf_runtime_tokens <- c()
   tf_sha <- NA_character_
   tf_src <- tf_urls[1]
+  tf_rt_versions_list <- list()
 
   for (u in tf_urls) {
     res <- try(fetch_with_retry(u), silent = TRUE)
@@ -41,8 +42,11 @@ scrape_tensorflow <- function() {
     if (inherits(doc, 'try-error')) next
     tf_sha <- res$sha256
     tf_src <- u
+    
     cells <- c(doc |> html_elements('table td, table th, ul li, ol li, p, code') |> html_text2())
     cells <- unique(clean_txt(cells))
+    
+    # Extract language information
     if (any(grepl('Python', cells, ignore.case = TRUE))) tf_lang_base <- c(tf_lang_base, 'python')
     if (any(grepl('C\\+\\+', cells, ignore.case = TRUE))) tf_lang_base <- c(tf_lang_base, 'c++')
     # Python explicit versions like "Python 3.10", optionally ending with +
@@ -77,36 +81,14 @@ scrape_tensorflow <- function() {
         }
       }
     }
+    
+    # Extract runtime tokens
     if (any(grepl('CUDA', cells, ignore.case = TRUE))) tf_runtime_tokens <- c(tf_runtime_tokens, 'CUDA')
     if (any(grepl('ROCm', cells, ignore.case = TRUE))) tf_runtime_tokens <- c(tf_runtime_tokens, 'ROCm')
-  }
-  # Defensive fallback: if both pages failed or yielded nothing, ensure a minimal row
-  if ((length(tf_lang_base) == 0) && (length(tf_runtime_tokens) == 0)) {
-    if (is.na(tf_sha) || nchar(tf_sha) == 0) tf_sha <- 'fallback'
-    if (is.na(tf_src) || nchar(tf_src) == 0) tf_src <- 'https://www.tensorflow.org/install'
-    tf_lang_base <- c('python')
-    # TensorFlow supports CUDA and ROCm depending on platform; include both tokens to seed evidence mapping
-    tf_runtime_tokens <- c('CUDA', 'ROCm')
-  }
-  framework_raw <- tibble(
-    framework = 'tensorflow',
-    source_url = tf_src,
-    sha256 = tf_sha,
-    languages = collapse_uniq(tf_lang_base),
-    runtimes = collapse_uniq(tf_runtime_tokens)
-  )
-
-  tf_rt_versions_list <- list()
-  for (u in tf_urls) {
-    res <- try(fetch_with_retry(u), silent = TRUE)
-    if (inherits(res, 'try-error')) next
-    doc <- try(read_html(res$path), silent = TRUE)
-    if (inherits(doc, 'try-error')) next
-
+    
+    # Extract version information
     tf_rt_versions_list <- extract_table_versions(doc, 'tensorflow', c('tensorflow'), u, res$sha256, tf_rt_versions_list)
-
-    cells <- c(doc |> html_elements('table td, table th, ul li, ol li, p, code') |> html_text2())
-    cells <- unique(clean_txt(cells))
+    
     # Robust extraction allowing symbols between token and version
     cu <- unique(unlist(regmatches(cells, gregexpr('(?i)CUDA[^0-9]{0,5}[0-9]+(\\.[0-9]+)?', cells, perl = TRUE, ignore.case = TRUE))))
     ro <- unique(unlist(regmatches(cells, gregexpr('(?i)ROCm[^0-9]{0,5}[0-9]+(\\.[0-9]+)?', cells, perl = TRUE, ignore.case = TRUE))))
@@ -116,6 +98,23 @@ scrape_tensorflow <- function() {
     tf_rt_versions_list <- extract_runtime_versions(cu, 'CUDA', '(?i)cuda[^0-9]{0,5}', 'tensorflow', fwv, pyv, u, res$sha256, tf_rt_versions_list)
     tf_rt_versions_list <- extract_runtime_versions(ro, 'ROCM', '(?i)rocm[^0-9]{0,5}', 'tensorflow', fwv, pyv, u, res$sha256, tf_rt_versions_list)
   }
+  
+  # Defensive fallback: if both pages failed or yielded nothing, ensure a minimal row
+  if ((length(tf_lang_base) == 0) && (length(tf_runtime_tokens) == 0)) {
+    if (is.na(tf_sha) || nchar(tf_sha) == 0) tf_sha <- 'fallback'
+    if (is.na(tf_src) || nchar(tf_src) == 0) tf_src <- 'https://www.tensorflow.org/install'
+    tf_lang_base <- c('python')
+    # TensorFlow supports CUDA and ROCm depending on platform; include both tokens to seed evidence mapping
+    tf_runtime_tokens <- c('CUDA', 'ROCm')
+  }
+  
+  framework_raw <- tibble(
+    framework = 'tensorflow',
+    source_url = tf_src,
+    sha256 = tf_sha,
+    languages = collapse_uniq(tf_lang_base),
+    runtimes = collapse_uniq(tf_runtime_tokens)
+  )
   
   tf_rt_versions <- if (length(tf_rt_versions_list) > 0) bind_rows(tf_rt_versions_list) else tibble(
     framework = character(),
