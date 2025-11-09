@@ -75,7 +75,7 @@ scrape_pytorch <- function() {
     runtimes = collapse_uniq(pt_runtime_tokens)
   )
 
-  pt_rt_versions <- tibble()
+  pt_rt_versions_list <- list()
   for (u in pt_urls) {
     res <- try(fetch_with_retry(u), silent = TRUE)
     if (inherits(res, 'try-error')) next
@@ -113,12 +113,12 @@ scrape_pytorch <- function() {
           if (!is.na(cu_ix)) {
             cuv <- cells[cu_ix]
             cuv_num <- trimws(gsub('(?i)cuda', '', cuv, perl = TRUE))
-            if (nchar(cuv_num) > 0) pt_rt_versions <- bind_rows(pt_rt_versions, tibble(framework='pytorch',framework_version=fwv_num,runtime_name='CUDA',runtime_version=cuv_num,python_version=pyv_num,source_url=u,sha256=res$sha256))
+            if (nchar(cuv_num) > 0) pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework='pytorch',framework_version=fwv_num,runtime_name='CUDA',runtime_version=cuv_num,python_version=pyv_num,source_url=u,sha256=res$sha256)
           }
           if (!is.na(ro_ix)) {
             rov <- cells[ro_ix]
             rov_num <- trimws(gsub('(?i)rocm', '', rov, perl = TRUE))
-            if (nchar(rov_num) > 0) pt_rt_versions <- bind_rows(pt_rt_versions, tibble(framework='pytorch',framework_version=fwv_num,runtime_name='ROCM',runtime_version=rov_num,python_version=pyv_num,source_url=u,sha256=res$sha256))
+            if (nchar(rov_num) > 0) pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework='pytorch',framework_version=fwv_num,runtime_name='ROCM',runtime_version=rov_num,python_version=pyv_num,source_url=u,sha256=res$sha256)
           }
         }
       }
@@ -142,9 +142,9 @@ scrape_pytorch <- function() {
       }
       if (nchar(v) > 0) {
         if (length(pyv_clean) > 0) {
-          for (pv in pyv_clean) pt_rt_versions <- bind_rows(pt_rt_versions, tibble(framework='pytorch',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256))
+          for (pv in pyv_clean) pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework='pytorch',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256)
         } else {
-          pt_rt_versions <- bind_rows(pt_rt_versions, tibble(framework='pytorch',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256))
+          pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework='pytorch',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256)
         }
       }
     }
@@ -159,27 +159,31 @@ scrape_pytorch <- function() {
       }
       if (nchar(v) > 0) {
         if (length(pyv_clean) > 0) {
-          for (pv in pyv_clean) pt_rt_versions <- bind_rows(pt_rt_versions, tibble(framework='pytorch',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256))
+          for (pv in pyv_clean) pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework='pytorch',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256)
         } else {
-          pt_rt_versions <- bind_rows(pt_rt_versions, tibble(framework='pytorch',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256))
+          pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework='pytorch',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256)
         }
       }
     }
   }
+
+  pt_rt_versions <- bind_rows(pt_rt_versions_list)
 
   framework_matrix_raw <- pt_rt_versions |> distinct(framework, runtime_name, runtime_version, python_version, framework_version, .keep_all = TRUE)
 
   language_raw <- tibble()
   add_lang_rows <- function(language_raw, tokens, src, sh) {
     if (length(tokens) == 0) return(language_raw)
+    lang_list <- list()
     for (tk in unique(tokens)) {
-      language_raw <- bind_rows(language_raw, tibble(language = tolower(trimws(tk)), source_url = src, sha256 = sh))
+      lang_list[[length(lang_list) + 1]] <- tibble(language = tolower(trimws(tk)), source_url = src, sha256 = sh)
     }
-    language_raw
+    bind_rows(language_raw, lang_list)
   }
   language_raw <- add_lang_rows(language_raw, pt_lang_versioned, pt_src, pt_sha)
   if (nrow(language_raw) == 0) {
     language_raw <- tibble(language = 'python: python 3.8+', source_url = framework_raw$source_url[1], sha256 = framework_raw$sha256[1])
+  }
 
   list(
     framework_raw = framework_raw,
