@@ -64,7 +64,7 @@ fetch_with_retry <- function(
 
     meta <- list(
       sha256 = sha,
-      fetched_at = format(Sys.time(), tz = 'UTC', usetz = TRUE),
+      fetched_at = fetched_at,
       url = url,
       status_code = status,
       content_type = content_type,
