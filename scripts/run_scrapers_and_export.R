@@ -197,7 +197,7 @@ while (attempt <= global_max_attempts) {
       quit(status = 2)
     } else {
       append_log(glue('{format(Sys.time(), tz="UTC")}: RETRYING {runid}'))
-      Sys.sleep(2^attempt)
+      Sys.sleep(2^(attempt-1))
     }
   }
 }
