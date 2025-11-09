@@ -103,48 +103,7 @@ scrape_tensorflow <- function() {
     doc <- try(read_html(res$path), silent = TRUE)
     if (inherits(doc, 'try-error')) next
 
-    try({
-      tables <- doc |> html_elements('table')
-      for (tbl in tables) {
-        headers <- tbl |> html_elements('thead th, tr:first-child th') |> html_text2() |> clean_txt()
-        if (length(headers) == 0) next
-        # Some TF tables do not include an explicit 'TensorFlow' header column; focus on Python/CUDA/ROCm presence
-        has_cuda <- any(grepl('cuda', headers, ignore.case = TRUE))
-        has_rocm <- any(grepl('rocm', headers, ignore.case = TRUE))
-        has_py <- any(grepl('python', headers, ignore.case = TRUE))
-        if (!((has_cuda || has_rocm) && has_py)) next
-        fw_ix <- which(grepl('tensorflow', headers, ignore.case = TRUE))[1]
-        cu_ix <- if (has_cuda) which(grepl('cuda', headers, ignore.case = TRUE))[1] else NA_integer_
-        ro_ix <- if (has_rocm) which(grepl('rocm', headers, ignore.case = TRUE))[1] else NA_integer_
-        py_ix <- which(grepl('python', headers, ignore.case = TRUE))[1]
-        rows <- tbl |> html_elements('tbody tr')
-        if (length(rows) == 0) rows <- tbl |> html_elements('tr')
-        for (r in rows) {
-          cells <- r |> html_elements('th, td') |> html_text2() |> clean_txt()
-          if (length(cells) < max(na.omit(c(fw_ix, cu_ix, ro_ix, py_ix)))) next
-          fwv <- if (!is.na(fw_ix)) cells[fw_ix] else NA_character_
-          fwv_num <- NA_character_
-          if (!is.na(fwv)) {
-            mm <- regmatches(fwv, regexpr('([0-9]+(\\.[0-9]+)+)', fwv, perl = TRUE))
-            if (length(mm) > 0) fwv_num <- mm
-          }
-          pyv <- if (!is.na(py_ix)) cells[py_ix] else NA_character_
-          pyv_num <- if (!is.na(pyv)) trimws(gsub('(?i)python', '', pyv, perl = TRUE)) else NA_character_
-          if (!is.na(cu_ix)) {
-            cuv <- cells[cu_ix]
-            # Allow Unicode punctuation like CUDA® 12.2
-            cuv_num <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)?)$','\\1', gsub('(?i)cuda\\P{N}{0,5}', '', cuv, perl = TRUE)))
-            if (nchar(cuv_num) > 0) tf_rt_versions_list[[length(tf_rt_versions_list) + 1]] <- tibble(framework='tensorflow',framework_version=fwv_num,runtime_name='CUDA',runtime_version=cuv_num,python_version=pyv_num,source_url=u,sha256=res$sha256)
-          }
-          if (!is.na(ro_ix)) {
-            rov <- cells[ro_ix]
-            # Allow Unicode punctuation like ROCm™ 5.7
-            rov_num <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)?)$','\\1', gsub('(?i)rocm\\P{N}{0,5}', '', rov, perl = TRUE)))
-            if (nchar(rov_num) > 0) tf_rt_versions_list[[length(tf_rt_versions_list) + 1]] <- tibble(framework='tensorflow',framework_version=fwv_num,runtime_name='ROCM',runtime_version=rov_num,python_version=pyv_num,source_url=u,sha256=res$sha256)
-          }
-        }
-      }
-    }, silent = TRUE)
+    tf_rt_versions_list <- extract_table_versions(doc, 'tensorflow', c('tensorflow'), u, res$sha256, tf_rt_versions_list)
 
     cells <- c(doc |> html_elements('table td, table th, ul li, ol li, p, code') |> html_text2())
     cells <- unique(clean_txt(cells))

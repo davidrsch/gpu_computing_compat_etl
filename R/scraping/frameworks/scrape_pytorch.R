@@ -74,46 +74,7 @@ scrape_pytorch <- function() {
     if (inherits(doc, 'try-error')) next
 
     # Tables with PyTorch/CUDA/ROCm/Python headers
-    try({
-      tables <- doc |> html_elements('table')
-      for (tbl in tables) {
-        headers <- tbl |> html_elements('thead th, tr:first-child th') |> html_text2() |> clean_txt()
-        if (length(headers) == 0) next
-        has_fw <- any(grepl('pytorch|torch', headers, ignore.case = TRUE))
-        has_cuda <- any(grepl('cuda', headers, ignore.case = TRUE))
-        has_rocm <- any(grepl('rocm', headers, ignore.case = TRUE))
-        has_py <- any(grepl('python', headers, ignore.case = TRUE))
-        if (!(has_fw && (has_cuda || has_rocm) && has_py)) next
-        fw_ix <- which(grepl('pytorch|torch', headers, ignore.case = TRUE))[1]
-        cu_ix <- if (has_cuda) which(grepl('cuda', headers, ignore.case = TRUE))[1] else NA_integer_
-        ro_ix <- if (has_rocm) which(grepl('rocm', headers, ignore.case = TRUE))[1] else NA_integer_
-        py_ix <- which(grepl('python', headers, ignore.case = TRUE))[1]
-        rows <- tbl |> html_elements('tbody tr')
-        if (length(rows) == 0) rows <- tbl |> html_elements('tr')
-        for (r in rows) {
-          cells <- r |> html_elements('th, td') |> html_text2() |> clean_txt()
-          if (length(cells) < max(na.omit(c(fw_ix, cu_ix, ro_ix, py_ix)))) next
-          fwv <- if (!is.na(fw_ix)) cells[fw_ix] else NA_character_
-          fwv_num <- NA_character_
-          if (!is.na(fwv)) {
-            mm <- regmatches(fwv, regexpr('([0-9]+(\\.[0-9]+)+)', fwv, perl = TRUE))
-            if (length(mm) > 0) fwv_num <- mm
-          }
-          pyv <- if (!is.na(py_ix)) cells[py_ix] else NA_character_
-          pyv_num <- if (!is.na(pyv)) trimws(gsub('(?i)python', '', pyv, perl = TRUE)) else NA_character_
-          if (!is.na(cu_ix)) {
-            cuv <- cells[cu_ix]
-            cuv_num <- trimws(gsub('(?i)cuda', '', cuv, perl = TRUE))
-            if (nchar(cuv_num) > 0) pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework='pytorch',framework_version=fwv_num,runtime_name='CUDA',runtime_version=cuv_num,python_version=pyv_num,source_url=u,sha256=res$sha256)
-          }
-          if (!is.na(ro_ix)) {
-            rov <- cells[ro_ix]
-            rov_num <- trimws(gsub('(?i)rocm', '', rov, perl = TRUE))
-            if (nchar(rov_num) > 0) pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework='pytorch',framework_version=fwv_num,runtime_name='ROCM',runtime_version=rov_num,python_version=pyv_num,source_url=u,sha256=res$sha256)
-          }
-        }
-      }
-    }, silent = TRUE)
+    pt_rt_versions_list <- extract_table_versions(doc, 'pytorch', c('pytorch', 'torch'), u, res$sha256, pt_rt_versions_list)
 
     cells <- c(doc |> html_elements('table td, table th, ul li, ol li, p, code') |> html_text2())
     cells <- unique(clean_txt(cells))
