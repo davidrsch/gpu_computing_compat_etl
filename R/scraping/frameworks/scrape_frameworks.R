@@ -62,8 +62,8 @@ scrape_frameworks <- function() {
     # minimal fallback to ensure non-empty set if upstream provided none
     language_raw <- tibble(
       language = 'python: python 3.8+',
-      source_url = if (nrow(framework_raw) > 0) framework_raw$source_url[1] else NA_character_,
-      sha256 = if (nrow(framework_raw) > 0) framework_raw$sha256[1] else NA_character_
+      source_url = if (nrow(framework_raw) > 0 && !is.na(framework_raw$source_url[1])) framework_raw$source_url[1] else NA_character_,
+      sha256 = if (nrow(framework_raw) > 0 && !is.na(framework_raw$sha256[1])) framework_raw$sha256[1] else NA_character_
     )
   }
 
