@@ -168,7 +168,7 @@ normalize_and_export <- function(raw_list, out_dir = 'data/processed') {
           vendor_id = vendor_id,
           name = v_can,
           source_url = unique(raw_list[[src]]$gpu_raw$source_url)[1],
-          fetched_at = unique(raw_list[[src]]$gpu_raw$sha256)[1],
+          fetched_at = if ("fetched_at" %in% names(raw_list[[src]]$gpu_raw)) unique(raw_list[[src]]$gpu_raw$fetched_at)[1] else NA,
           sha256 = unique(raw_list[[src]]$gpu_raw$sha256)[1]
         )
       )
