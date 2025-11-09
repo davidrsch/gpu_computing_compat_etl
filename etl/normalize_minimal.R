@@ -588,7 +588,7 @@ normalize_and_export <- function(raw_list, out_dir = 'data/processed') {
             language_id = language_id,
             name = base,
             source_url = lr$source_url[i],
-            fetched_at = lr$sha256[i],
+            fetched_at = lr$fetched_at[i],
             sha256 = lr$sha256[i]
           )
         )
