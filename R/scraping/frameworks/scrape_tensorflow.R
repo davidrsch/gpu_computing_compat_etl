@@ -133,12 +133,13 @@ scrape_tensorflow <- function() {
           if (!is.na(cu_ix)) {
             cuv <- cells[cu_ix]
             # Allow Unicode punctuation like CUDA® 12.2
-            cuv_num <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)?)$','\\1', gsub('(?i)cuda[^0-9]{0,5}', '', cuv, perl = TRUE)))
+            cuv_num <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)?)$','\\1', gsub('(?i)cuda\\P{N}{0,5}', '', cuv, perl = TRUE)))
             if (nchar(cuv_num) > 0) tf_rt_versions_list[[length(tf_rt_versions_list) + 1]] <- tibble(framework='tensorflow',framework_version=fwv_num,runtime_name='CUDA',runtime_version=cuv_num,python_version=pyv_num,source_url=u,sha256=res$sha256)
           }
           if (!is.na(ro_ix)) {
             rov <- cells[ro_ix]
-            rov_num <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)?)$','\\1', gsub('(?i)rocm[^0-9]{0,5}', '', rov, perl = TRUE)))
+            # Allow Unicode punctuation like ROCm™ 5.7
+            rov_num <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)?)$','\\1', gsub('(?i)rocm\\P{N}{0,5}', '', rov, perl = TRUE)))
             if (nchar(rov_num) > 0) tf_rt_versions_list[[length(tf_rt_versions_list) + 1]] <- tibble(framework='tensorflow',framework_version=fwv_num,runtime_name='ROCM',runtime_version=rov_num,python_version=pyv_num,source_url=u,sha256=res$sha256)
           }
         }
