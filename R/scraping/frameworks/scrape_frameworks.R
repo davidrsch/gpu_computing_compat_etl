@@ -14,28 +14,32 @@ scrape_frameworks <- function() {
     jax = function() try(scrape_jax(), silent = TRUE)
   )
 
-  framework_raw <- tibble()
-  language_raw <- tibble()
-  framework_matrix_raw <- tibble()
+  framework_raw_list <- list()
+  language_raw_list <- list()
+  framework_matrix_raw_list <- list()
 
   for (nm in names(collectors)) {
     res <- collectors[[nm]]()
     if (inherits(res, 'try-error') || is.null(res)) {
       next
     }
-    # Bind framework rows
+    # Collect framework rows
     if (!is.null(res$framework_raw) && nrow(res$framework_raw) > 0) {
-      framework_raw <- bind_rows(framework_raw, res$framework_raw)
+      framework_raw_list[[length(framework_raw_list) + 1]] <- res$framework_raw
     }
-    # Bind language evidence
+    # Collect language evidence
     if (!is.null(res$language_raw) && nrow(res$language_raw) > 0) {
-      language_raw <- bind_rows(language_raw, res$language_raw)
+      language_raw_list[[length(language_raw_list) + 1]] <- res$language_raw
     }
-    # Bind detailed matrices
+    # Collect detailed matrices
     if (!is.null(res$framework_matrix_raw) && nrow(res$framework_matrix_raw) > 0) {
-      framework_matrix_raw <- bind_rows(framework_matrix_raw, res$framework_matrix_raw)
+      framework_matrix_raw_list[[length(framework_matrix_raw_list) + 1]] <- res$framework_matrix_raw
     }
   }
+  
+  framework_raw <- if (length(framework_raw_list) > 0) bind_rows(framework_raw_list) else tibble()
+  language_raw <- if (length(language_raw_list) > 0) bind_rows(language_raw_list) else tibble()
+  framework_matrix_raw <- if (length(framework_matrix_raw_list) > 0) bind_rows(framework_matrix_raw_list) else tibble()
 
   # De-duplicate and ensure expected columns
   if (nrow(framework_raw) > 0) {
