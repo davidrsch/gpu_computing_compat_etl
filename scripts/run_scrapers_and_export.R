@@ -103,7 +103,6 @@ while (attempt <= global_max_attempts) {
   start_ts <- Sys.time()
   cat('Starting run', runid, 'attempt', attempt, '\n')
   raw_list <- list()
-  errors <- list()
 
   # Run scrapers with per-source retries
   scrapers <- list(
