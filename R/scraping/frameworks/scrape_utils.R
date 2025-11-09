@@ -22,6 +22,21 @@ collapse_uniq <- function(x) {
   if (length(x) == 0) NA_character_ else paste(x, collapse = ';')
 }
 
+# Create tibble rows for language information
+# Processes language tokens and creates a tibble with one row per unique token
+# @param tokens Character vector of language tokens (e.g., "python: python 3.8")
+# @param src Source URL
+# @param sh SHA256 hash of the source
+# @return Tibble with columns: language, source_url, sha256
+add_lang_rows <- function(tokens, src, sh) {
+  if (length(tokens) == 0) return(tibble())
+  lang_list <- list()
+  for (tk in unique(tokens)) {
+    lang_list[[length(lang_list) + 1]] <- tibble(language = tolower(trimws(tk)), source_url = src, sha256 = sh)
+  }
+  bind_rows(lang_list)
+}
+
 # Extract version number from framework version strings
 # Returns the first numeric version pattern found (e.g., "1.2.3")
 # NOTE: Only processes the first element of fwv vector. If multiple framework
@@ -59,12 +74,17 @@ extract_runtime_versions <- function(runtime_list, runtime_name, runtime_pattern
   for (x in runtime_list) {
     v <- trimws(gsub(runtime_pattern, '', x, perl = TRUE))
     # Handle potential edge cases with complex patterns or Unicode symbols in version strings
-    v <- trimws(regmatches(v, regexpr('[0-9]+(\\.[0-9]+)+', v, perl = TRUE)))
+    m <- regexpr('[0-9]+(\\.[0-9]+)+', v, perl = TRUE)
+    if (m[1] != -1) {
+      v <- trimws(regmatches(v, m))
+    } else {
+      v <- NA_character_
+    }
     
     pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
     fwv_num <- extract_version_number(fwv)
     
-    if (nchar(v) > 0) {
+    if (!is.na(v) && nchar(v) > 0) {
       if (length(pyv_clean) > 0) {
         for (pv in pyv_clean) {
           existing_list[[length(existing_list) + 1]] <- tibble(

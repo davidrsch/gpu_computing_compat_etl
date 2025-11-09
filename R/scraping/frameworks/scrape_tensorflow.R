@@ -132,10 +132,7 @@ scrape_tensorflow <- function() {
 
   framework_matrix_raw <- tf_rt_versions |> distinct(framework, runtime_name, runtime_version, python_version, framework_version, .keep_all = TRUE)
 
-  language_raw_list <- list()
-  # add_lang_rows is now defined in scrape_utils.R and returns a bound tibble
-  language_raw_list <- c(language_raw_list, add_lang_rows(tf_lang_versioned, tf_src, tf_sha))
-  language_raw <- if (length(language_raw_list) > 0) bind_rows(language_raw_list) else tibble()
+  language_raw <- add_lang_rows(tf_lang_versioned, tf_src, tf_sha)
   if (nrow(language_raw) == 0) {
     language_raw <- tibble(language = 'python: python 3.8+', source_url = framework_raw$source_url[1], sha256 = framework_raw$sha256[1])
   }
