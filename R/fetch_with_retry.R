@@ -92,6 +92,7 @@ fetch_with_retry <- function(
       status = status
     ))
   }
+  stop(glue("Failed to fetch {url}: all retry attempts exhausted or unexpected error."))
 }
 
 # fallback operator
