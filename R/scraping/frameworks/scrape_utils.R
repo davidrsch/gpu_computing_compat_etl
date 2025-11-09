@@ -181,7 +181,6 @@ extract_table_versions <- function(doc, framework, framework_patterns, url, sha2
         pyv <- if (!is.na(py_ix)) cells[py_ix] else NA_character_
         pyv_num <- if (!is.na(pyv)) trimws(gsub('(?i)python', '', pyv, perl = TRUE)) else NA_character_
         if (!is.na(pyv_num) && nchar(pyv_num) == 0) pyv_num <- NA_character_
-        if (!is.na(pyv_num) && nchar(pyv_num) == 0) pyv_num <- NA_character_
         
         # Extract CUDA version if present
         if (!is.na(cu_ix)) {
