@@ -3,18 +3,9 @@ library(tibble)
 library(dplyr)
 library(purrr)
 source('R/fetch_with_retry.R')
+source('R/scraping/frameworks/scrape_utils.R')
 
 scrape_pytorch <- function() {
-  clean_txt <- function(x) {
-    x <- gsub('\n|\r', ' ', x)
-    x <- gsub('\\s+', ' ', trimws(x))
-    x
-  }
-  collapse_uniq <- function(x) {
-    x <- unique(trimws(x))
-    x <- x[nchar(x) > 0]
-    if (length(x) == 0) NA_character_ else paste(x, collapse = ';')
-  }
 
   pt_urls <- c(
     'https://pytorch.org/get-started/previous-versions/',
@@ -130,27 +121,6 @@ scrape_pytorch <- function() {
     ro <- unique(unlist(regmatches(cells, gregexpr('ROCm[[:space:]]*[0-9]+(\\.[0-9]+)?', cells, perl = TRUE, ignore.case = TRUE))))
     pyv <- unique(unlist(regmatches(cells, gregexpr('Python[[:space:]]*[0-9]+(\\.[0-9]+)+', cells, perl = TRUE, ignore.case = TRUE))))
     fwv <- unique(unlist(regmatches(cells, gregexpr('(?i)(torch|pytorch)[^0-9]*([0-9]+(\\.[0-9]+)+)', cells, perl = TRUE))))
-
-    extract_runtime_versions <- function(runtime_list, runtime_name, runtime_pattern, framework, fwv, pyv, u, sha256, pt_rt_versions_list) {
-      for (x in runtime_list) {
-        v <- trimws(gsub(runtime_pattern, '', x, perl = TRUE))
-        pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
-        fwv_num <- NA_character_
-        if (length(fwv) > 0) {
-          m <- regexec('([0-9]+(\\.[0-9]+)+)', fwv[1])
-          mm <- regmatches(fwv[1], m)[[1]]
-          if (length(mm) >= 2) fwv_num <- mm[2]
-        }
-        if (nchar(v) > 0) {
-          if (length(pyv_clean) > 0) {
-            for (pv in pyv_clean) pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework=framework,framework_version=fwv_num,runtime_name=runtime_name,runtime_version=v,python_version=trimws(pv),source_url=u,sha256=sha256)
-          } else {
-            pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework=framework,framework_version=fwv_num,runtime_name=runtime_name,runtime_version=v,python_version=NA_character_,source_url=u,sha256=sha256)
-          }
-        }
-      }
-      pt_rt_versions_list
-    }
 
     pt_rt_versions_list <- extract_runtime_versions(cu, "CUDA", "(?i)cuda", "pytorch", fwv, pyv, u, res$sha256, pt_rt_versions_list)
     pt_rt_versions_list <- extract_runtime_versions(ro, "ROCM", "(?i)rocm", "pytorch", fwv, pyv, u, res$sha256, pt_rt_versions_list)

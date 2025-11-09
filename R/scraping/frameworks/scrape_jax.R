@@ -104,30 +104,8 @@ scrape_jax <- function() {
     pyv <- unique(unlist(regmatches(cells, gregexpr('Python[[:space:]]*[0-9]+(\\.[0-9]+)+', cells, perl = TRUE, ignore.case = TRUE))))
     fwv <- unique(unlist(regmatches(cells, gregexpr('(?i)jax[^0-9]*([0-9]+(\\.[0-9]+)+)', cells, perl = TRUE))))
 
-    for (x in cu) {
-      v <- trimws(gsub('(?i)cuda', '', x, perl = TRUE))
-      pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
-      fwv_num <- extract_version_number(fwv)
-      if (nchar(v) > 0) {
-        if (length(pyv_clean) > 0) {
-          for (pv in pyv_clean) jax_rt_versions_list[[length(jax_rt_versions_list) + 1]] <- tibble(framework='jax',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256)
-        } else {
-          jax_rt_versions_list[[length(jax_rt_versions_list) + 1]] <- tibble(framework='jax',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256)
-        }
-      }
-    }
-    for (x in ro) {
-      v <- trimws(gsub('(?i)rocm', '', x, perl = TRUE))
-      pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
-      fwv_num <- extract_version_number(fwv)
-      if (nchar(v) > 0) {
-        if (length(pyv_clean) > 0) {
-          for (pv in pyv_clean) jax_rt_versions_list[[length(jax_rt_versions_list) + 1]] <- tibble(framework='jax',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256)
-        } else {
-          jax_rt_versions_list[[length(jax_rt_versions_list) + 1]] <- tibble(framework='jax',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256)
-        }
-      }
-    }
+    jax_rt_versions_list <- extract_runtime_versions(cu, 'CUDA', '(?i)cuda', 'jax', fwv, pyv, u, res$sha256, jax_rt_versions_list)
+    jax_rt_versions_list <- extract_runtime_versions(ro, 'ROCM', '(?i)rocm', 'jax', fwv, pyv, u, res$sha256, jax_rt_versions_list)
   }
   
   jax_rt_versions <- if (length(jax_rt_versions_list) > 0) bind_rows(jax_rt_versions_list) else tibble()
