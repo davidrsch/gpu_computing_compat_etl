@@ -66,8 +66,8 @@ scrape_frameworks <- function() {
   if (nrow(framework_matrix_raw) > 0) {
     framework_matrix_raw <- framework_matrix_raw |>
       mutate(
-        python_version = ifelse(is.null(python_version), NA_character_, python_version),
-        framework_version = ifelse(is.null(framework_version), NA_character_, framework_version)
+        python_version = ifelse(is.na(python_version), NA_character_, python_version),
+        framework_version = ifelse(is.na(framework_version), NA_character_, framework_version)
       ) |>
       distinct(
         framework,
