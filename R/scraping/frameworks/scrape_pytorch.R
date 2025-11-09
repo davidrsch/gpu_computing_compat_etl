@@ -16,6 +16,7 @@ scrape_pytorch <- function() {
   pt_runtime_tokens <- c()
   pt_sha <- NA_character_
   pt_src <- pt_urls[1]
+  pt_rt_versions_list <- list()
 
   for (u in pt_urls) {
     res <- try(fetch_with_retry(u), silent = TRUE)
@@ -24,6 +25,8 @@ scrape_pytorch <- function() {
     if (inherits(doc, 'try-error')) next
     pt_sha <- res$sha256
     pt_src <- u
+    
+    # Extract cells for language and runtime token detection
     cells <- c(doc |> html_elements('table td, table th, ul li, ol li') |> html_text2())
     cells <- unique(clean_txt(cells))
 
@@ -54,6 +57,21 @@ scrape_pytorch <- function() {
 
     if (any(grepl('CUDA', cells, ignore.case = TRUE))) pt_runtime_tokens <- c(pt_runtime_tokens, 'CUDA')
     if (any(grepl('ROCm', cells, ignore.case = TRUE))) pt_runtime_tokens <- c(pt_runtime_tokens, 'ROCm')
+
+    # Extract runtime versions from the same document
+    # Tables with PyTorch/CUDA/ROCm/Python headers
+    pt_rt_versions_list <- extract_table_versions(doc, 'pytorch', c('pytorch', 'torch'), u, res$sha256, pt_rt_versions_list)
+
+    # Extract cells for runtime version detection (includes additional elements)
+    cells_extended <- c(doc |> html_elements('table td, table th, ul li, ol li, p, code') |> html_text2())
+    cells_extended <- unique(clean_txt(cells_extended))
+    cu <- unique(unlist(regmatches(cells_extended, gregexpr('CUDA[[:space:]]*[0-9]+(\\.[0-9]+)?', cells_extended, perl = TRUE, ignore.case = TRUE))))
+    ro <- unique(unlist(regmatches(cells_extended, gregexpr('ROCm[[:space:]]*[0-9]+(\\.[0-9]+)?', cells_extended, perl = TRUE, ignore.case = TRUE))))
+    pyv <- unique(unlist(regmatches(cells_extended, gregexpr('Python[[:space:]]*[0-9]+(\\.[0-9]+)+', cells_extended, perl = TRUE, ignore.case = TRUE))))
+    fwv <- unique(unlist(regmatches(cells_extended, gregexpr('(?i)(torch|pytorch)[^0-9]*([0-9]+(\\.[0-9]+)+)', cells_extended, perl = TRUE))))
+
+    pt_rt_versions_list <- extract_runtime_versions(cu, "CUDA", "(?i)cuda", "pytorch", fwv, pyv, u, res$sha256, pt_rt_versions_list)
+    pt_rt_versions_list <- extract_runtime_versions(ro, "ROCM", "(?i)rocm", "pytorch", fwv, pyv, u, res$sha256, pt_rt_versions_list)
   }
   pt_lang_base <- unique(pt_lang_base)
   pt_runtime_tokens <- unique(pt_runtime_tokens)
@@ -65,27 +83,6 @@ scrape_pytorch <- function() {
     languages = collapse_uniq(pt_lang_base),
     runtimes = collapse_uniq(pt_runtime_tokens)
   )
-
-  pt_rt_versions_list <- list()
-  for (u in pt_urls) {
-    res <- try(fetch_with_retry(u), silent = TRUE)
-    if (inherits(res, 'try-error')) next
-    doc <- try(read_html(res$path), silent = TRUE)
-    if (inherits(doc, 'try-error')) next
-
-    # Tables with PyTorch/CUDA/ROCm/Python headers
-    pt_rt_versions_list <- extract_table_versions(doc, 'pytorch', c('pytorch', 'torch'), u, res$sha256, pt_rt_versions_list)
-
-    cells <- c(doc |> html_elements('table td, table th, ul li, ol li, p, code') |> html_text2())
-    cells <- unique(clean_txt(cells))
-    cu <- unique(unlist(regmatches(cells, gregexpr('CUDA[[:space:]]*[0-9]+(\\.[0-9]+)?', cells, perl = TRUE, ignore.case = TRUE))))
-    ro <- unique(unlist(regmatches(cells, gregexpr('ROCm[[:space:]]*[0-9]+(\\.[0-9]+)?', cells, perl = TRUE, ignore.case = TRUE))))
-    pyv <- unique(unlist(regmatches(cells, gregexpr('Python[[:space:]]*[0-9]+(\\.[0-9]+)+', cells, perl = TRUE, ignore.case = TRUE))))
-    fwv <- unique(unlist(regmatches(cells, gregexpr('(?i)(torch|pytorch)[^0-9]*([0-9]+(\\.[0-9]+)+)', cells, perl = TRUE))))
-
-    pt_rt_versions_list <- extract_runtime_versions(cu, "CUDA", "(?i)cuda", "pytorch", fwv, pyv, u, res$sha256, pt_rt_versions_list)
-    pt_rt_versions_list <- extract_runtime_versions(ro, "ROCM", "(?i)rocm", "pytorch", fwv, pyv, u, res$sha256, pt_rt_versions_list)
-  }
 
   if (length(pt_rt_versions_list) > 0) {
     pt_rt_versions <- bind_rows(pt_rt_versions_list)
