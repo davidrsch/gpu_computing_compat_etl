@@ -1,11 +1,21 @@
 # Utility functions for framework scrapers
 
+# Normalize whitespace in text strings
+# Replaces newlines and carriage returns with spaces,
+# then collapses multiple spaces into one
+# @param x Character vector to clean
+# @return Character vector with normalized whitespace
 clean_txt <- function(x) {
   x <- gsub('\n|\r', ' ', x)
   x <- gsub('\\s+', ' ', trimws(x))
   x
 }
 
+# De-duplicate and collapse vector into semicolon-separated string
+# Removes duplicates, trims whitespace, filters out empty strings,
+# and joins remaining values with semicolons
+# @param x Character vector to process
+# @return Single string with semicolon-separated unique values, or NA if none remain
 collapse_uniq <- function(x) {
   x <- unique(trimws(x))
   x <- x[nchar(x) > 0]
@@ -14,6 +24,10 @@ collapse_uniq <- function(x) {
 
 # Extract version number from framework version strings
 # Returns the first numeric version pattern found (e.g., "1.2.3")
+# NOTE: Only processes the first element of fwv vector. If multiple framework
+# versions are found, only the first will be used for all runtime combinations.
+# @param fwv Character vector of framework version strings
+# @return Single version number string or NA_character_
 extract_version_number <- function(fwv) {
   fwv_num <- NA_character_
   if (length(fwv) > 0) {
@@ -82,6 +96,11 @@ extract_runtime_versions <- function(runtime_list, runtime_name, runtime_pattern
 # Extract runtime version data from HTML tables
 # This function handles the common pattern across framework scrapers of parsing
 # tables that contain framework version, runtime (CUDA/ROCm), Python version columns.
+#
+# NOTE: Errors during table extraction are silently caught with try(..., silent = TRUE)
+# to allow scraping to continue even if one table has formatting issues. This is
+# intentional for robustness during web scraping, though it may make debugging harder.
+# If tables fail to parse, existing_list is returned unchanged.
 #
 # @param doc HTML document object from read_html()
 # @param framework Name of the framework (e.g., "jax", "tensorflow", "pytorch")

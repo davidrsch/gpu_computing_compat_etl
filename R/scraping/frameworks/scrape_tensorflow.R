@@ -7,6 +7,8 @@ source('R/scraping/frameworks/scrape_utils.R')
 
 scrape_tensorflow <- function() {
   # Expand Python version ranges like "Python 3.9–3.13" into explicit minor versions
+  # NOTE: This function is specific to TensorFlow's documentation format.
+  # It could be extracted to scrape_utils.R if other frameworks need it.
   expand_python_range <- function(start_v, end_v) {
     sv <- as.character(start_v)
     ev <- as.character(end_v)
@@ -90,6 +92,8 @@ scrape_tensorflow <- function() {
     tf_rt_versions_list <- extract_table_versions(doc, 'tensorflow', c('tensorflow'), u, res$sha256, tf_rt_versions_list)
     
     # Robust extraction allowing symbols between token and version
+    # Pattern {0,5} allows up to 5 non-numeric characters (e.g., spaces, Unicode symbols)
+    # between runtime name and version number to handle varied documentation formatting
     cu <- unique(unlist(regmatches(cells, gregexpr('(?i)CUDA[^0-9]{0,5}[0-9]+(\\.[0-9]+)?', cells, perl = TRUE, ignore.case = TRUE))))
     ro <- unique(unlist(regmatches(cells, gregexpr('(?i)ROCm[^0-9]{0,5}[0-9]+(\\.[0-9]+)?', cells, perl = TRUE, ignore.case = TRUE))))
     pyv <- unique(unlist(regmatches(cells, gregexpr('(?i)Python[[:space:]]*[0-9]+(\\.[0-9]+)+', cells, perl = TRUE, ignore.case = TRUE))))
