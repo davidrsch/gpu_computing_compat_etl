@@ -230,7 +230,7 @@ normalize_and_export <- function(raw_list, out_dir = 'data/processed') {
           # keep only plausible CC tokens like '5.2', '6.1'
           cc_raw$compute_capability <- as.character(cc_raw$compute_capability)
           cc_raw <- cc_raw |>
-            filter(grepl('^[0-9]+\\.[0-9]$', compute_capability))
+            filter(grepl('^[0-9]+\\.[0-9]+$', compute_capability))
           # ensure required columns
           if (is.null(cc_raw$source_url)) {
             cc_raw$source_url <- NA_character_
