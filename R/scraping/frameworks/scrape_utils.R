@@ -105,7 +105,7 @@ extract_table_versions <- function(doc, framework, framework_patterns, url, sha2
       
       # For JAX/PyTorch: require framework column OR just runtime+python
       # For TensorFlow: just runtime+python is sufficient
-      if (!((has_cuda || has_rocm) && has_py)) next
+      if (!(has_fw || ((has_cuda || has_rocm) && has_py))) next
       
       # Find column indices
       fw_ix <- NA_integer_
