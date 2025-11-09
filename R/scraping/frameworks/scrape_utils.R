@@ -147,7 +147,7 @@ extract_table_versions <- function(doc, framework, framework_patterns, url, sha2
           cuv <- cells[cu_ix]
           # Handle different cleaning patterns (TensorFlow has Unicode symbols)
           if (framework == 'tensorflow') {
-            cuv_num <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)?)$','\\1', gsub('(?i)cuda\\P{N}{0,5}', '', cuv, perl = TRUE)))
+            cuv_num <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)+)$','\\1', gsub('(?i)cuda\\P{N}{0,5}', '', cuv, perl = TRUE)))
           } else {
             cuv_num <- trimws(gsub('(?i)cuda', '', cuv, perl = TRUE))
           }
