@@ -46,9 +46,8 @@ add_lang_rows <- function(tokens, src, sh) {
 extract_version_number <- function(fwv) {
   fwv_num <- NA_character_
   if (length(fwv) > 0) {
-    m <- regexec('([0-9]+(\\.[0-9]+)*)', fwv[1])
-    mm <- regmatches(fwv[1], m)[[1]]
-    if (length(mm) >= 2) fwv_num <- mm[2]
+    m <- regexpr('[0-9]+(\\.[0-9]+)*', fwv[1], perl = TRUE)
+    if (m[1] != -1) fwv_num <- regmatches(fwv[1], m)
   }
   fwv_num
 }
@@ -74,7 +73,7 @@ extract_runtime_versions <- function(runtime_list, runtime_name, runtime_pattern
   for (x in runtime_list) {
     v <- trimws(gsub(runtime_pattern, '', x, perl = TRUE))
     # Handle potential edge cases with complex patterns or Unicode symbols in version strings
-    m <- regexpr('[0-9]+(\\.[0-9]+)+', v, perl = TRUE)
+    m <- regexpr('[0-9]+(\\.[0-9]+)*', v, perl = TRUE)
     if (m[1] != -1) {
       v <- trimws(regmatches(v, m))
     } else {
@@ -82,6 +81,7 @@ extract_runtime_versions <- function(runtime_list, runtime_name, runtime_pattern
     }
     
     pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
+    pyv_clean <- pyv_clean[nchar(pyv_clean) > 0]
     fwv_num <- extract_version_number(fwv)
     
     if (!is.na(v) && nchar(v) > 0) {
@@ -159,11 +159,11 @@ extract_table_versions <- function(doc, framework, framework_patterns, url, sha2
       }
       cu_ix <- if (has_cuda) which(grepl('cuda', headers, ignore.case = TRUE))[1] else NA_integer_
       ro_ix <- if (has_rocm) which(grepl('rocm', headers, ignore.case = TRUE))[1] else NA_integer_
-      py_ix <- which(grepl('python', headers, ignore.case = TRUE))[1]
+      py_ix <- if (has_py) which(grepl('python', headers, ignore.case = TRUE))[1] else NA_integer_
       
       # Extract rows
       rows <- tbl |> html_elements('tbody tr')
-      if (length(rows) == 0) rows <- tbl |> html_elements('tr')
+      if (length(rows) == 0) rows <- tbl |> html_elements('tr:not(thead tr)')
       
       for (r in rows) {
         cells <- r |> html_elements('th, td') |> html_text2() |> clean_txt()
@@ -173,20 +173,21 @@ extract_table_versions <- function(doc, framework, framework_patterns, url, sha2
         fwv <- if (!is.na(fw_ix)) cells[fw_ix] else NA_character_
         fwv_num <- NA_character_
         if (!is.na(fwv)) {
-          mm <- regmatches(fwv, regexpr('([0-9]+(\\.[0-9]+)*)', fwv, perl = TRUE))
+          mm <- regmatches(fwv, regexpr('[0-9]+(\\.[0-9]+)*', fwv, perl = TRUE))
           if (length(mm) > 0) fwv_num <- mm
         }
         
         # Extract Python version
         pyv <- if (!is.na(py_ix)) cells[py_ix] else NA_character_
         pyv_num <- if (!is.na(pyv)) trimws(gsub('(?i)python', '', pyv, perl = TRUE)) else NA_character_
+        if (!is.na(pyv_num) && nchar(pyv_num) == 0) pyv_num <- NA_character_
         
         # Extract CUDA version if present
         if (!is.na(cu_ix)) {
           cuv <- cells[cu_ix]
           # Handle different cleaning patterns (TensorFlow has Unicode symbols)
           if (framework == 'tensorflow') {
-            cuv_num <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)+)$','\\1', gsub('(?i)cuda\\P{N}{0,5}', '', cuv, perl = TRUE)))
+            cuv_num <- trimws(gsub('(?i)cuda\\P{N}{0,5}', '', cuv, perl = TRUE))
           } else {
             cuv_num <- trimws(gsub('(?i)cuda', '', cuv, perl = TRUE))
           }
@@ -208,7 +209,7 @@ extract_table_versions <- function(doc, framework, framework_patterns, url, sha2
           rov <- cells[ro_ix]
           # Handle different cleaning patterns (TensorFlow has Unicode symbols)
           if (framework == 'tensorflow') {
-            rov_num <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)+)$','\\1', gsub('(?i)rocm\\P{N}{0,5}', '', rov, perl = TRUE)))
+            rov_num <- trimws(gsub('(?i)rocm\\P{N}{0,5}', '', rov, perl = TRUE))
           } else {
             rov_num <- trimws(gsub('(?i)rocm', '', rov, perl = TRUE))
           }
