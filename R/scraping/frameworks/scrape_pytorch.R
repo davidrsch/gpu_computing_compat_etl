@@ -167,7 +167,19 @@ scrape_pytorch <- function() {
     }
   }
 
-  pt_rt_versions <- bind_rows(pt_rt_versions_list)
+  if (length(pt_rt_versions_list) > 0) {
+    pt_rt_versions <- bind_rows(pt_rt_versions_list)
+  } else {
+    pt_rt_versions <- tibble(
+      framework = character(),
+      framework_version = character(),
+      runtime_name = character(),
+      runtime_version = character(),
+      python_version = character(),
+      source_url = character(),
+      sha256 = character()
+    )
+  }
 
   framework_matrix_raw <- pt_rt_versions |> distinct(framework, runtime_name, runtime_version, python_version, framework_version, .keep_all = TRUE)
 
