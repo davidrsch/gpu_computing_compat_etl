@@ -154,41 +154,8 @@ scrape_tensorflow <- function() {
     pyv <- unique(unlist(regmatches(cells, gregexpr('(?i)Python[[:space:]]*[0-9]+(\\.[0-9]+)+', cells, perl = TRUE, ignore.case = TRUE))))
     fwv <- unique(unlist(regmatches(cells, gregexpr('(?i)tensorflow[^0-9]*([0-9]+(\\.[0-9]+)+)', cells, perl = TRUE))))
 
-    for (x in cu) {
-      # Strip token and any leading non-digits to leave version
-      v <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)?)$','\\1', gsub('(?i)cuda[^0-9]{0,5}', '', x, perl = TRUE)))
-      pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
-      fwv_num <- NA_character_
-      if (length(fwv) > 0) {
-        m <- regexec('([0-9]+(\\.[0-9]+)+)', fwv[1])
-        mm <- regmatches(fwv[1], m)[[1]]
-        if (length(mm) >= 2) fwv_num <- mm[2]
-      }
-      if (nchar(v) > 0) {
-        if (length(pyv_clean) > 0) {
-          for (pv in pyv_clean) tf_rt_versions_list[[length(tf_rt_versions_list) + 1]] <- tibble(framework='tensorflow',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256)
-        } else {
-          tf_rt_versions_list[[length(tf_rt_versions_list) + 1]] <- tibble(framework='tensorflow',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256)
-        }
-      }
-    }
-    for (x in ro) {
-      v <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)?)$','\\1', gsub('(?i)rocm[^0-9]{0,5}', '', x, perl = TRUE)))
-      pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
-      fwv_num <- NA_character_
-      if (length(fwv) > 0) {
-        m <- regexec('([0-9]+(\\.[0-9]+)+)', fwv[1])
-        mm <- regmatches(fwv[1], m)[[1]]
-        if (length(mm) >= 2) fwv_num <- mm[2]
-      }
-      if (nchar(v) > 0) {
-        if (length(pyv_clean) > 0) {
-          for (pv in pyv_clean) tf_rt_versions_list[[length(tf_rt_versions_list) + 1]] <- tibble(framework='tensorflow',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256)
-        } else {
-          tf_rt_versions_list[[length(tf_rt_versions_list) + 1]] <- tibble(framework='tensorflow',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256)
-        }
-      }
-    }
+    tf_rt_versions_list <- extract_runtime_versions(cu, 'CUDA', '(?i)cuda[^0-9]{0,5}', 'tensorflow', fwv, pyv, u, res$sha256, tf_rt_versions_list)
+    tf_rt_versions_list <- extract_runtime_versions(ro, 'ROCM', '(?i)rocm[^0-9]{0,5}', 'tensorflow', fwv, pyv, u, res$sha256, tf_rt_versions_list)
   }
   
   tf_rt_versions <- if (length(tf_rt_versions_list) > 0) bind_rows(tf_rt_versions_list) else tibble(
