@@ -52,8 +52,7 @@ complete_checks <- function(tables, relaxed = FALSE) {
   if (nrow(gpus) == 0) {
     missing$gpus <- 'no gpu models'
     status_ok <- FALSE
-  }
-  if (!relaxed) {
+  } else if (!relaxed) {
     # >=5 per vendor if page non-empty: approximate by vendor counts
     vendor_counts <- table(gpus$vendor_id)
     if (any(vendor_counts > 0 & vendor_counts < 5)) {
