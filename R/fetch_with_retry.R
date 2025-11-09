@@ -9,7 +9,7 @@ library(glue)
 #' @param refresh if FALSE and identical sha exists, return cached meta
 #' @param max_retries max retries for 429/503
 #' @param rate_limit seconds to wait between requests (per-call)
-#' @return list(path, sha256, fetched_at, url, status)
+#' @return list(path, sha256, fetched_at, url, status_code)
 fetch_with_retry <- function(
   url,
   cache_dir = 'cache',
@@ -30,7 +30,7 @@ fetch_with_retry <- function(
       sha256 = meta$sha256,
       fetched_at = meta$fetched_at,
       url = meta$url,
-      status = meta$status_code
+      status_code = meta$status_code
     ))
   }
 
@@ -89,7 +89,7 @@ fetch_with_retry <- function(
       sha256 = sha,
       fetched_at = meta$fetched_at,
       url = url,
-      status = status
+      status_code = status
     ))
   }
   stop(glue("Failed to fetch {url}: all retry attempts exhausted or unexpected error."))
