@@ -36,8 +36,8 @@ scrape_pytorch <- function() {
     cells <- c(doc |> html_elements('table td, table th, ul li, ol li') |> html_text2())
     cells <- unique(clean_txt(cells))
 
-  if (any(grepl('Python', cells, ignore.case = TRUE))) pt_lang_base <- c(pt_lang_base, 'python')
-  if (any(grepl('C\\+\\+', cells, ignore.case = TRUE))) pt_lang_base <- c(pt_lang_base, 'c++')
+    if (any(grepl('Python', cells, ignore.case = TRUE))) pt_lang_base <- c(pt_lang_base, 'python')
+    if (any(grepl('C\\+\\+', cells, ignore.case = TRUE))) pt_lang_base <- c(pt_lang_base, 'c++')
 
     py <- unique(unlist(regmatches(
       cells,
