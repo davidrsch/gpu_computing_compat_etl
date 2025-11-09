@@ -26,7 +26,7 @@ scrape_jax <- function() {
     jax_sha <- res$sha256
     jax_src <- u
     
-    cells <- c(doc |> html_elements('table td, table th, ul li, ol li, p, code') |> html_text2())
+    cells <- doc |> html_elements('table td, table th, ul li, ol li, p, code') |> html_text2()
     cells <- unique(clean_txt(cells))
     
     # Extract language information
@@ -50,9 +50,9 @@ scrape_jax <- function() {
     # Extract version information
     jax_rt_versions_list <- extract_table_versions(doc, 'jax', c('jax'), u, res$sha256, jax_rt_versions_list)
     
-    cu <- unique(unlist(regmatches(cells, gregexpr('CUDA[[:space:]]*[0-9]+(\\.[0-9]+)?', cells, perl = TRUE, ignore.case = TRUE))))
-    ro <- unique(unlist(regmatches(cells, gregexpr('ROCm[[:space:]]*[0-9]+(\\.[0-9]+)?', cells, perl = TRUE, ignore.case = TRUE))))
-    pyv <- unique(unlist(regmatches(cells, gregexpr('Python[[:space:]]*[0-9]+(\\.[0-9]+)+', cells, perl = TRUE, ignore.case = TRUE))))
+    cu <- unique(unlist(regmatches(cells, gregexpr('(?i)CUDA[[:space:]]*[0-9]+(\\.[0-9]+)?', cells, perl = TRUE))))
+    ro <- unique(unlist(regmatches(cells, gregexpr('(?i)ROCm[[:space:]]*[0-9]+(\\.[0-9]+)?', cells, perl = TRUE))))
+    pyv <- unique(unlist(regmatches(cells, gregexpr('(?i)Python[[:space:]]*[0-9]+(\\.[0-9]+)?', cells, perl = TRUE))))
     fwv <- unique(unlist(regmatches(cells, gregexpr('(?i)jax[^0-9]*([0-9]+(\\.[0-9]+)+)', cells, perl = TRUE))))
 
     jax_rt_versions_list <- extract_runtime_versions(cu, 'CUDA', '(?i)cuda', 'jax', fwv, pyv, u, res$sha256, jax_rt_versions_list)

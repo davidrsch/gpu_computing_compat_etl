@@ -45,7 +45,7 @@ scrape_tensorflow <- function() {
     tf_sha <- res$sha256
     tf_src <- u
     
-    cells <- c(doc |> html_elements('table td, table th, ul li, ol li, p, code') |> html_text2())
+    cells <- doc |> html_elements('table td, table th, ul li, ol li, p, code') |> html_text2()
     cells <- unique(clean_txt(cells))
     
     # Extract language information
@@ -94,9 +94,9 @@ scrape_tensorflow <- function() {
     # Robust extraction allowing symbols between token and version
     # Pattern {0,5} allows up to 5 non-numeric characters (e.g., spaces, Unicode symbols)
     # between runtime name and version number to handle varied documentation formatting
-    cu <- unique(unlist(regmatches(cells, gregexpr('(?i)CUDA[^0-9]{0,5}[0-9]+(\\.[0-9]+)?', cells, perl = TRUE, ignore.case = TRUE))))
-    ro <- unique(unlist(regmatches(cells, gregexpr('(?i)ROCm[^0-9]{0,5}[0-9]+(\\.[0-9]+)?', cells, perl = TRUE, ignore.case = TRUE))))
-    pyv <- unique(unlist(regmatches(cells, gregexpr('(?i)Python[[:space:]]*[0-9]+(\\.[0-9]+)+', cells, perl = TRUE, ignore.case = TRUE))))
+    cu <- unique(unlist(regmatches(cells, gregexpr('(?i)CUDA[^0-9]{0,5}[0-9]+(\\.[0-9]+)?', cells, perl = TRUE))))
+    ro <- unique(unlist(regmatches(cells, gregexpr('(?i)ROCm[^0-9]{0,5}[0-9]+(\\.[0-9]+)?', cells, perl = TRUE))))
+    pyv <- unique(unlist(regmatches(cells, gregexpr('(?i)Python[[:space:]]*[0-9]+(\\.[0-9]+)+', cells, perl = TRUE))))
     fwv <- unique(unlist(regmatches(cells, gregexpr('(?i)tensorflow[^0-9]*([0-9]+(\\.[0-9]+)+)', cells, perl = TRUE))))
 
     tf_rt_versions_list <- extract_runtime_versions(cu, 'CUDA', '(?i)cuda[^0-9]{0,5}', 'tensorflow', fwv, pyv, u, res$sha256, tf_rt_versions_list)

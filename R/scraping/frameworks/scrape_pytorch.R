@@ -27,7 +27,7 @@ scrape_pytorch <- function() {
     pt_src <- u
     
     # Extract cells for language and runtime token detection
-    cells <- c(doc |> html_elements('table td, table th, ul li, ol li') |> html_text2())
+    cells <- doc |> html_elements('table td, table th, ul li, ol li') |> html_text2()
     cells <- unique(clean_txt(cells))
 
     if (any(grepl('Python', cells, ignore.case = TRUE))) pt_lang_base <- c(pt_lang_base, 'python')
@@ -63,11 +63,11 @@ scrape_pytorch <- function() {
     pt_rt_versions_list <- extract_table_versions(doc, 'pytorch', c('pytorch', 'torch'), u, res$sha256, pt_rt_versions_list)
 
     # Extract cells for runtime version detection (includes additional elements)
-    cells_extended <- c(doc |> html_elements('table td, table th, ul li, ol li, p, code') |> html_text2())
+    cells_extended <- doc |> html_elements('table td, table th, ul li, ol li, p, code') |> html_text2()
     cells_extended <- unique(clean_txt(cells_extended))
-    cu <- unique(unlist(regmatches(cells_extended, gregexpr('CUDA[[:space:]]*[0-9]+(\\.[0-9]+)?', cells_extended, perl = TRUE, ignore.case = TRUE))))
-    ro <- unique(unlist(regmatches(cells_extended, gregexpr('ROCm[[:space:]]*[0-9]+(\\.[0-9]+)?', cells_extended, perl = TRUE, ignore.case = TRUE))))
-    pyv <- unique(unlist(regmatches(cells_extended, gregexpr('Python[[:space:]]*[0-9]+(\\.[0-9]+)+', cells_extended, perl = TRUE, ignore.case = TRUE))))
+    cu <- unique(unlist(regmatches(cells_extended, gregexpr('(?i)CUDA[[:space:]]*[0-9]+(\\.[0-9]+)?', cells_extended, perl = TRUE))))
+    ro <- unique(unlist(regmatches(cells_extended, gregexpr('(?i)ROCm[[:space:]]*[0-9]+(\\.[0-9]+)?', cells_extended, perl = TRUE))))
+    pyv <- unique(unlist(regmatches(cells_extended, gregexpr('(?i)Python[[:space:]]*[0-9]+(\\.[0-9]+)+', cells_extended, perl = TRUE))))
     fwv <- unique(unlist(regmatches(cells_extended, gregexpr('(?i)(torch|pytorch)[^0-9]*([0-9]+(\\.[0-9]+)+)', cells_extended, perl = TRUE))))
 
     pt_rt_versions_list <- extract_runtime_versions(cu, "CUDA", "(?i)cuda", "pytorch", fwv, pyv, u, res$sha256, pt_rt_versions_list)
