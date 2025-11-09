@@ -207,7 +207,7 @@ normalize_and_export <- function(raw_list, out_dir = 'data/processed') {
           compute_capability = NA_character_,
           device_id = NA_character_,
           source_url = gpu_raw$source_url[i],
-          fetched_at = gpu_raw$sha256[i],
+          fetched_at = if ("fetched_at" %in% names(gpu_raw)) gpu_raw$fetched_at[i] else Sys.time(),
           sha256 = gpu_raw$sha256[i]
         )
       )
