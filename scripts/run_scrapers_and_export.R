@@ -154,6 +154,7 @@ while (attempt <= global_max_attempts) {
   # completeness checks
   cc <- complete_checks(tables, relaxed = relaxed)
   end_ts <- Sys.time()
+  duration_secs <- as.numeric(difftime(end_ts, start_ts, units = 'secs'))
   counts <- list(
     vendors = nrow(tables$vendors),
     gpus = nrow(tables$gpu_models),
@@ -173,7 +174,7 @@ while (attempt <= global_max_attempts) {
     'FAILED'
   }
   cat(glue(
-    'RUN {runid} vendors={counts$vendors} gpus={counts$gpus} runtimes={counts$runtimes} languages={counts$languages} frameworks={counts$frameworks} gpu_runtime_mappings={counts$gpu_runtime_mappings} runtime_language_mappings={counts$runtime_language_mappings} framework_compat_mappings={counts$framework_compat_mappings} — STATUS: {status}\n'
+    'RUN {runid} duration={round(duration_secs, 2)}s vendors={counts$vendors} gpus={counts$gpus} runtimes={counts$runtimes} languages={counts$languages} frameworks={counts$frameworks} gpu_runtime_mappings={counts$gpu_runtime_mappings} runtime_language_mappings={counts$runtime_language_mappings} framework_compat_mappings={counts$framework_compat_mappings} — STATUS: {status}\n'
   ))
 
   # append summary to log
@@ -183,7 +184,7 @@ while (attempt <= global_max_attempts) {
     paste(names(cc$missing), collapse = ';')
   }
   append_log(glue(
-    '{format(Sys.time(), tz="UTC")}: run {runid} — vendors={counts$vendors} gpus={counts$gpus} runtimes={counts$runtimes} languages={counts$languages} frameworks={counts$frameworks} gpu_runtime_mappings={counts$gpu_runtime_mappings} runtime_language_mappings={counts$runtime_language_mappings} framework_compat_mappings={counts$framework_compat_mappings} — missing={missing_text} — status={status}'
+    '{format(Sys.time(), tz="UTC")}: run {runid} — duration={round(duration_secs, 2)}s — vendors={counts$vendors} gpus={counts$gpus} runtimes={counts$runtimes} languages={counts$languages} frameworks={counts$frameworks} gpu_runtime_mappings={counts$gpu_runtime_mappings} runtime_language_mappings={counts$runtime_language_mappings} framework_compat_mappings={counts$framework_compat_mappings} — missing={missing_text} — status={status}'
   ))
 
   if (cc$ok) {
