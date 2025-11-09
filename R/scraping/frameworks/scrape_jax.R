@@ -58,7 +58,7 @@ scrape_jax <- function() {
     runtimes = collapse_uniq(jax_runtime_tokens)
   )
 
-  jax_rt_versions <- tibble()
+  jax_rt_versions_list <- list()
   for (u in jax_urls) {
     res <- try(fetch_with_retry(u), silent = TRUE)
     if (inherits(res, 'try-error')) next
@@ -95,12 +95,12 @@ scrape_jax <- function() {
           if (!is.na(cu_ix)) {
             cuv <- cells[cu_ix]
             cuv_num <- trimws(gsub('(?i)cuda', '', cuv, perl = TRUE))
-            if (nchar(cuv_num) > 0) jax_rt_versions <- bind_rows(jax_rt_versions, tibble(framework='jax',framework_version=fwv_num,runtime_name='CUDA',runtime_version=cuv_num,python_version=pyv_num,source_url=u,sha256=res$sha256))
+            if (nchar(cuv_num) > 0) jax_rt_versions_list[[length(jax_rt_versions_list) + 1]] <- tibble(framework='jax',framework_version=fwv_num,runtime_name='CUDA',runtime_version=cuv_num,python_version=pyv_num,source_url=u,sha256=res$sha256)
           }
           if (!is.na(ro_ix)) {
             rov <- cells[ro_ix]
             rov_num <- trimws(gsub('(?i)rocm', '', rov, perl = TRUE))
-            if (nchar(rov_num) > 0) jax_rt_versions <- bind_rows(jax_rt_versions, tibble(framework='jax',framework_version=fwv_num,runtime_name='ROCM',runtime_version=rov_num,python_version=pyv_num,source_url=u,sha256=res$sha256))
+            if (nchar(rov_num) > 0) jax_rt_versions_list[[length(jax_rt_versions_list) + 1]] <- tibble(framework='jax',framework_version=fwv_num,runtime_name='ROCM',runtime_version=rov_num,python_version=pyv_num,source_url=u,sha256=res$sha256)
           }
         }
       }
@@ -124,9 +124,9 @@ scrape_jax <- function() {
       }
       if (nchar(v) > 0) {
         if (length(pyv_clean) > 0) {
-          for (pv in pyv_clean) jax_rt_versions <- bind_rows(jax_rt_versions, tibble(framework='jax',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256))
+          for (pv in pyv_clean) jax_rt_versions_list[[length(jax_rt_versions_list) + 1]] <- tibble(framework='jax',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256)
         } else {
-          jax_rt_versions <- bind_rows(jax_rt_versions, tibble(framework='jax',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256))
+          jax_rt_versions_list[[length(jax_rt_versions_list) + 1]] <- tibble(framework='jax',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256)
         }
       }
     }
@@ -141,25 +141,27 @@ scrape_jax <- function() {
       }
       if (nchar(v) > 0) {
         if (length(pyv_clean) > 0) {
-          for (pv in pyv_clean) jax_rt_versions <- bind_rows(jax_rt_versions, tibble(framework='jax',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256))
+          for (pv in pyv_clean) jax_rt_versions_list[[length(jax_rt_versions_list) + 1]] <- tibble(framework='jax',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256)
         } else {
-          jax_rt_versions <- bind_rows(jax_rt_versions, tibble(framework='jax',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256))
+          jax_rt_versions_list[[length(jax_rt_versions_list) + 1]] <- tibble(framework='jax',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256)
         }
       }
     }
   }
+  
+  jax_rt_versions <- if (length(jax_rt_versions_list) > 0) bind_rows(jax_rt_versions_list) else tibble()
 
   framework_matrix_raw <- jax_rt_versions |> distinct(framework, runtime_name, runtime_version, python_version, framework_version, .keep_all = TRUE)
 
-  language_raw <- tibble()
-  add_lang_rows <- function(language_raw, tokens, src, sh) {
-    if (length(tokens) == 0) return(language_raw)
-    for (tk in unique(tokens)) {
-      language_raw <- bind_rows(language_raw, tibble(language = tolower(trimws(tk)), source_url = src, sha256 = sh))
-    }
-    language_raw
+  language_raw_list <- list()
+  add_lang_rows <- function(tokens, src, sh) {
+    if (length(tokens) == 0) return(list())
+    lapply(unique(tokens), function(tk) {
+      tibble(language = tolower(trimws(tk)), source_url = src, sha256 = sh)
+    })
   }
-  language_raw <- add_lang_rows(language_raw, jax_lang_versioned, jax_src, jax_sha)
+  language_raw_list <- c(language_raw_list, add_lang_rows(jax_lang_versioned, jax_src, jax_sha))
+  language_raw <- if (length(language_raw_list) > 0) bind_rows(language_raw_list) else tibble()
   if (nrow(language_raw) == 0) {
     language_raw <- tibble(language = 'python: python 3.8+', source_url = framework_raw$source_url[1], sha256 = framework_raw$sha256[1])
   }
