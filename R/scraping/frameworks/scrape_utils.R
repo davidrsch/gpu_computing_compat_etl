@@ -44,8 +44,8 @@ extract_runtime_versions <- function(runtime_list, runtime_name, runtime_pattern
                                       framework, fwv, pyv, url, sha256, existing_list) {
   for (x in runtime_list) {
     v <- trimws(gsub(runtime_pattern, '', x, perl = TRUE))
-    # Handle potential edge cases with complex patterns (e.g., TensorFlow's Unicode symbols)
-    v <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)?)$', '\\1', v))
+    # Handle potential edge cases with complex patterns or Unicode symbols in version strings
+    v <- trimws(regmatches(v, regexpr('[0-9]+(\\.[0-9]+)+', v, perl = TRUE)))
     
     pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
     fwv_num <- extract_version_number(fwv)
