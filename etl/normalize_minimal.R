@@ -474,7 +474,7 @@ normalize_and_export <- function(raw_list, out_dir = 'data/processed') {
         grepl('oneapi', val, ignore.case = TRUE) ||
           grepl('one api', val, ignore.case = TRUE)
       ) {
-        fam <- 'ONEAPI'
+        fam <- 'oneAPI'
       } else {
         # fallback: first word
         wf <- tolower(trimws(sub(' .*', '', val)))
