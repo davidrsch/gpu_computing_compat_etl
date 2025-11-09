@@ -98,7 +98,6 @@ complete_checks <- function(tables, relaxed = FALSE) {
 }
 
 # main loop
-last_errs <- list()
 while (attempt <= global_max_attempts) {
   runid <- run_id()
   start_ts <- Sys.time()
