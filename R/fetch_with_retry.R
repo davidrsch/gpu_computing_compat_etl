@@ -60,6 +60,22 @@ fetch_with_retry <- function(
     body <- resp_body_raw(resp)
     content_length <- length(body)
 
+    # Check for retryable errors before writing to cache
+    if (status %in% c(429, 503)) {
+      if (attempt == max_retries) {
+        # Final failure: write error to separate file
+        err_raw <- file.path(cache_dir, paste0('error-', sha, '.raw'))
+        writeBin(body, err_raw)
+        stop(glue('Received {status} from {url} after {attempt} attempts'))
+      }
+      # Retry: don't overwrite cache, just wait and try again
+      Sys.sleep(wait)
+      wait <- wait * 2
+      attempt <- attempt + 1
+      next
+    }
+
+    # Success or non-retryable error: write to cache
     writeBin(body, raw_path)
 
     meta <- list(
@@ -71,18 +87,6 @@ fetch_with_retry <- function(
       content_length = content_length
     )
     write(toJSON(meta, auto_unbox = TRUE, pretty = TRUE), meta_path)
-
-    if (status %in% c(429, 503)) {
-      if (attempt == max_retries) {
-        err_raw <- file.path(cache_dir, paste0('error-', sha, '.raw'))
-        writeBin(body, err_raw)
-        stop(glue('Received {status} from {url} after {attempt} attempts'))
-      }
-      Sys.sleep(wait)
-      wait <- wait * 2
-      attempt <- attempt + 1
-      next
-    }
 
     return(list(
       path = raw_path,
