@@ -59,7 +59,7 @@ scrape_pytorch <- function() {
         ignore.case = TRUE
       )
     )))
-    if (length(cpp) > 0) pt_lang_versioned <- c(pt_lang_versioned, tolower(paste0('c++: ', gsub('\\\\', '', trimws(cpp)))))
+    if (length(cpp) > 0) pt_lang_versioned <- c(pt_lang_versioned, tolower(paste0('c++: ', trimws(cpp))))
 
     if (any(grepl('CUDA', cells, ignore.case = TRUE))) pt_runtime_tokens <- c(pt_runtime_tokens, 'CUDA')
     if (any(grepl('ROCm', cells, ignore.case = TRUE))) pt_runtime_tokens <- c(pt_runtime_tokens, 'ROCm')
