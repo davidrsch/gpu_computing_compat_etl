@@ -3,18 +3,9 @@ library(tibble)
 library(dplyr)
 library(purrr)
 source('R/fetch_with_retry.R')
+source('R/scraping/frameworks/scrape_utils.R')
 
 scrape_jax <- function() {
-  clean_txt <- function(x) {
-    x <- gsub('\n|\r', ' ', x)
-    x <- gsub('\\s+', ' ', trimws(x))
-    x
-  }
-  collapse_uniq <- function(x) {
-    x <- unique(trimws(x))
-    x <- x[nchar(x) > 0]
-    if (length(x) == 0) NA_character_ else paste(x, collapse = ';')
-  }
 
   jax_urls <- c(
     'https://jax.readthedocs.io/en/latest/installation.html',
