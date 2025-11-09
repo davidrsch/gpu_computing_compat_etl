@@ -129,12 +129,7 @@ scrape_tensorflow <- function() {
   framework_matrix_raw <- tf_rt_versions |> distinct(framework, runtime_name, runtime_version, python_version, framework_version, .keep_all = TRUE)
 
   language_raw_list <- list()
-  add_lang_rows <- function(tokens, src, sh) {
-    if (length(tokens) == 0) return(list())
-    lapply(unique(tokens), function(tk) {
-      tibble(language = tolower(trimws(tk)), source_url = src, sha256 = sh)
-    })
-  }
+  # add_lang_rows is now defined in scrape_utils.R and returns a bound tibble
   language_raw_list <- c(language_raw_list, add_lang_rows(tf_lang_versioned, tf_src, tf_sha))
   language_raw <- if (length(language_raw_list) > 0) bind_rows(language_raw_list) else tibble()
   if (nrow(language_raw) == 0) {
