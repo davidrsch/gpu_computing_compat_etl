@@ -68,7 +68,6 @@ scrape_amd <- function() {
       ) |>
       list_flatten() |>
       trimws()
-    res <- gsub("(?i)^Radeon Pro\\s+", "", res, perl = TRUE)
     res <- unique(res)
     discard(res, ~ nchar(.x) == 0)
   }
