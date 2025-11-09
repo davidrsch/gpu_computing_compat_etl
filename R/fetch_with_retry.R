@@ -37,7 +37,7 @@ fetch_with_retry <- function(
   attempt <- 1
   wait <- 1
   while (attempt <= max_retries) {
-    Sys.sleep(rate_limit)
+    if (attempt > 1) Sys.sleep(rate_limit)
     resp <- try(
       {
         req <- request(url) |>
