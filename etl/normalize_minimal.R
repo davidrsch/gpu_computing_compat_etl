@@ -469,7 +469,7 @@ normalize_and_export <- function(raw_list, out_dir = 'data/processed') {
       if (grepl('cuda', val, ignore.case = TRUE)) {
         fam <- 'CUDA'
       } else if (grepl('rocm', val, ignore.case = TRUE)) {
-        fam <- 'ROCM'
+        fam <- 'ROCm'
       } else if (
         grepl('oneapi', val, ignore.case = TRUE) ||
           grepl('one api', val, ignore.case = TRUE)
