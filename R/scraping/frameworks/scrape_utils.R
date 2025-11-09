@@ -169,7 +169,7 @@ extract_table_versions <- function(doc, framework, framework_patterns, url, sha2
           rov <- cells[ro_ix]
           # Handle different cleaning patterns (TensorFlow has Unicode symbols)
           if (framework == 'tensorflow') {
-            rov_num <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)?)$','\\1', gsub('(?i)rocm\\P{N}{0,5}', '', rov, perl = TRUE)))
+            rov_num <- trimws(gsub('^.*?([0-9]+(\\.[0-9]+)+)$','\\1', gsub('(?i)rocm\\P{N}{0,5}', '', rov, perl = TRUE)))
           } else {
             rov_num <- trimws(gsub('(?i)rocm', '', rov, perl = TRUE))
           }
