@@ -131,40 +131,29 @@ scrape_pytorch <- function() {
     pyv <- unique(unlist(regmatches(cells, gregexpr('Python[[:space:]]*[0-9]+(\\.[0-9]+)+', cells, perl = TRUE, ignore.case = TRUE))))
     fwv <- unique(unlist(regmatches(cells, gregexpr('(?i)(torch|pytorch)[^0-9]*([0-9]+(\\.[0-9]+)+)', cells, perl = TRUE))))
 
-    for (x in cu) {
-      v <- trimws(gsub('(?i)cuda', '', x, perl = TRUE))
-      pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
-      fwv_num <- NA_character_
-      if (length(fwv) > 0) {
-        m <- regexec('([0-9]+(\\.[0-9]+)+)', fwv[1])
-        mm <- regmatches(fwv[1], m)[[1]]
-        if (length(mm) >= 2) fwv_num <- mm[2]
-      }
-      if (nchar(v) > 0) {
-        if (length(pyv_clean) > 0) {
-          for (pv in pyv_clean) pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework='pytorch',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256)
-        } else {
-          pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework='pytorch',framework_version=fwv_num,runtime_name='CUDA',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256)
+    extract_runtime_versions <- function(runtime_list, runtime_name, runtime_pattern, framework, fwv, pyv, u, sha256, pt_rt_versions_list) {
+      for (x in runtime_list) {
+        v <- trimws(gsub(runtime_pattern, '', x, perl = TRUE))
+        pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
+        fwv_num <- NA_character_
+        if (length(fwv) > 0) {
+          m <- regexec('([0-9]+(\\.[0-9]+)+)', fwv[1])
+          mm <- regmatches(fwv[1], m)[[1]]
+          if (length(mm) >= 2) fwv_num <- mm[2]
+        }
+        if (nchar(v) > 0) {
+          if (length(pyv_clean) > 0) {
+            for (pv in pyv_clean) pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework=framework,framework_version=fwv_num,runtime_name=runtime_name,runtime_version=v,python_version=trimws(pv),source_url=u,sha256=sha256)
+          } else {
+            pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework=framework,framework_version=fwv_num,runtime_name=runtime_name,runtime_version=v,python_version=NA_character_,source_url=u,sha256=sha256)
+          }
         }
       }
+      pt_rt_versions_list
     }
-    for (x in ro) {
-      v <- trimws(gsub('(?i)rocm', '', x, perl = TRUE))
-      pyv_clean <- unique(trimws(gsub('(?i)python', '', pyv, perl = TRUE)))
-      fwv_num <- NA_character_
-      if (length(fwv) > 0) {
-        m <- regexec('([0-9]+(\\.[0-9]+)+)', fwv[1])
-        mm <- regmatches(fwv[1], m)[[1]]
-        if (length(mm) >= 2) fwv_num <- mm[2]
-      }
-      if (nchar(v) > 0) {
-        if (length(pyv_clean) > 0) {
-          for (pv in pyv_clean) pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework='pytorch',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=trimws(pv),source_url=u,sha256=res$sha256)
-        } else {
-          pt_rt_versions_list[[length(pt_rt_versions_list) + 1]] <- tibble(framework='pytorch',framework_version=fwv_num,runtime_name='ROCM',runtime_version=v,python_version=NA_character_,source_url=u,sha256=res$sha256)
-        }
-      }
-    }
+
+    pt_rt_versions_list <- extract_runtime_versions(cu, "CUDA", "(?i)cuda", "pytorch", fwv, pyv, u, res$sha256, pt_rt_versions_list)
+    pt_rt_versions_list <- extract_runtime_versions(ro, "ROCM", "(?i)rocm", "pytorch", fwv, pyv, u, res$sha256, pt_rt_versions_list)
   }
 
   if (length(pt_rt_versions_list) > 0) {
