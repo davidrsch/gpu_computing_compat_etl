@@ -134,7 +134,7 @@ extract_table_versions <- function(doc, framework, framework_patterns, url, sha2
         fwv <- if (!is.na(fw_ix)) cells[fw_ix] else NA_character_
         fwv_num <- NA_character_
         if (!is.na(fwv)) {
-          mm <- regmatches(fwv, regexpr('([0-9]+(\\.[0-9]+)+)', fwv, perl = TRUE))
+          mm <- regmatches(fwv, regexpr('([0-9]+(\\.[0-9]+)*)', fwv, perl = TRUE))
           if (length(mm) > 0) fwv_num <- mm
         }
         
