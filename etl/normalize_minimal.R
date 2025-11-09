@@ -611,7 +611,7 @@ normalize_and_export <- function(raw_list, out_dir = 'data/processed') {
           framework_id = framework_id,
           name = name,
           source_url = fr$source_url[i],
-          fetched_at = fr$sha256[i],
+          fetched_at = if ("fetched_at" %in% names(fr)) fr$fetched_at[i] else Sys.time(),
           sha256 = fr$sha256[i]
         )
       )
