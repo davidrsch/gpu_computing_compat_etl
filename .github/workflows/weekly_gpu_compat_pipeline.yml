@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     # Runs every Monday at 03:00 UTC (adjust as needed)
-    - cron: '0 14 * * 1'
+    - cron: '0 15 * * 1'
 
 concurrency:
   group: gpu-compat-weekly
@@ -17,6 +17,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends \
+              libcurl4-openssl-dev \
+              libx11-dev
 
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
