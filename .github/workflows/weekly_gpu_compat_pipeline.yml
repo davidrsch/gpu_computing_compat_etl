@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     # Runs every Monday at 03:00 UTC (adjust as needed)
-    - cron: '0 15 * * 1'
+    - cron: '0 20 * * 1'
 
 concurrency:
   group: gpu-compat-weekly
